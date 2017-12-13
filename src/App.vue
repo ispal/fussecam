@@ -1,47 +1,15 @@
 <template>
   <div id="app">
-    <transition name="fade">
-      <div class="detail-view" v-show="showDetailView">
-        <div class="detail-view__image">
-          <img :src="selectedImage" alt="Hall of Fame" />
-          <div>
-            <a :href="selectedImage" download="hall-of-fame">Download</a> <span @click.stop="share(selectedImage)" v-if="hasShareApi">Share</span>
-          </div>
-        </div>
-        <div class="detail-view__buttons">
-          <button class="btn" @click="selectImage(selectedImageIndex-1)" :class="{'is-disabled': !hasPrevImage }" :disabled="!hasPrevImage">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-              <title>arrow_back</title>
-              <path d="M20.016 11.016v1.969h-12.188l5.578 5.625-1.406 1.406-8.016-8.016 8.016-8.016 1.406 1.406-5.578 5.625h12.188z"></path>
-            </svg>
-          </button>
-          <button class="btn" @click="selectImage(selectedImageIndex+1)" :class="{'is-disabled': !hasNextImage }" :disabled="!hasNextImage">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-              <title>arrow_forward</title>
-              <path d="M12 3.984l8.016 8.016-8.016 8.016-1.406-1.406 5.578-5.625h-12.188v-1.969h12.188l-5.578-5.625z"></path>
-            </svg>
-          </button>
-          <button class="btn" @click="closeDetailView">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-            <path d="M18.984 6.422l-5.578 5.578 5.578 5.578-1.406 1.406-5.578-5.578-5.578 5.578-1.406-1.406 5.578-5.578-5.578-5.578 1.406-1.406 5.578 5.578 5.578-5.578z"></path>
-          </svg>
-          </button>
-        </div>
-      </div>
-    </transition>
-    <div class="wire"></div>
-    <transition name="slide-down">
-      <div class="error" v-if="error">
-        {{ error.name}}: {{ error.message }}
-      </div>
-    </transition>
+    <photo-gallery
+      :show="showDetailView"
+      :photos="photos"
+      :default-index="selectedImageIndex"
+      @on-close="closeDetailView"
+    />
+    <error :error="error" />
 
     <div class="title">FusseCam</div>
-    <transition name="fade-scale">
-      <div class="last-photo" v-if="showLastPhoto">
-        <img :src="lastPhoto">
-      </div>
-    </transition>
+    <last-photo :photo="lastPhoto" :show="showLastPhoto" />
     <main :class="{'has-last-photo': showLastPhoto }">
       <div class="polaroid">
         <div class="video-container" ref="videoContainer">
@@ -57,41 +25,35 @@
         </div>
         <div class="date">{{ date }}</div>
       </div>
-      <transition-group name="thumbnail" tag="div" class="strip">
-        <div v-for="(photo, index) in photos" :key="photo">
-          <a href="#" @click.prevent="selectImage(index)">
-            <img :src="photo" alt="Hall of Fame" />
-          </a>
-        </div>
-      </transition-group>
+      <film-strip :photos="photos" @image-selected="selectImage" />
     </main>
-    <nav :class="{'has-last-photo': showLastPhoto }">
-      <button class="btn btn--sm" @click="toggleCamera()" @touchstart="touchStart($event)" @touchend="touchEnd($event)">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-          <path d="M18.75 7.734c0.797 1.219 1.266 2.719 1.266 4.266 0 4.406-3.609 8.016-8.016 8.016v3l-3.984-4.031 3.984-3.984v3c3.328 0 6-2.672 6-6 0-1.031-0.281-1.969-0.703-2.813zM12 6c-3.328 0-6 2.672-6 6 0 1.031 0.234 1.969 0.703 2.813l-1.453 1.453c-0.797-1.219-1.266-2.719-1.266-4.266 0-4.406 3.609-8.016 8.016-8.016v-3l3.984 4.031-3.984 3.984v-3z"></path>
-        </svg>
-      </button>
-      <button class="btn" @click="takePhoto()" @touchstart="touchStart($event)" @touchend="touchEnd($event)">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-          <path d="M12 17.016c2.766 0 5.016-2.25 5.016-5.016s-2.25-5.016-5.016-5.016-5.016 2.25-5.016 5.016 2.25 5.016 5.016 5.016zM9 2.016h6l1.828 1.969h3.188c1.078 0 1.969 0.938 1.969 2.016v12c0 1.078-0.891 2.016-1.969 2.016h-16.031c-1.078 0-1.969-0.938-1.969-2.016v-12c0-1.078 0.891-2.016 1.969-2.016h3.188zM8.813 12c0-1.781 1.406-3.188 3.188-3.188s3.188 1.406 3.188 3.188-1.406 3.188-3.188 3.188-3.188-1.406-3.188-3.188z"></path>
-        </svg>
-      </button>
-      <button class="btn" @click="takePhotoWithTimer()" @touchstart="touchStart($event)" @touchend="touchEnd($event)">
-        3s
-      </button>
-      <button class="btn btn--sm" @click="clear()" @touchstart="touchStart($event)" @touchend="touchEnd($event)">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-          <path d="M18.984 6.422l-5.578 5.578 5.578 5.578-1.406 1.406-5.578-5.578-5.578 5.578-1.406-1.406 5.578-5.578-5.578-5.578 1.406-1.406 5.578 5.578 5.578-5.578z"></path>
-        </svg>
-      </button>
-    </nav>
+    <app-menu
+      class="{'has-last-photo': showLastPhoto }"
+      @takePhoto="takePhoto"
+      @takePhotoWithTimer="takePhotoWithTimer"
+      @toggleCamera="toggleCamera"
+      @clear="clear"
+    />
     <canvas id="paint" ref="canvas"></canvas>
   </div>
 </template>
 
 <script>
+import PhotoGallery from './PhotoGallery';
+import FilmStrip from './FilmStrip';
+import LastPhoto from './LastPhoto';
+import AppMenu from './AppMenu';
+import Error from './Error';
+
 export default {
   name: 'app',
+  components: {
+    PhotoGallery,
+    FilmStrip,
+    LastPhoto,
+    AppMenu,
+    Error,
+  },
   data() {
     return {
       photos: [],
@@ -104,11 +66,9 @@ export default {
       videoReady: false,
       timerSeconds: 3,
       showTimer: false,
-      selectedImage: null,
       selectedImageIndex: 0,
       showDetailView: false,
       isPortrait: true,
-      hasShareApi: false,
     };
   },
   created() {
@@ -125,12 +85,6 @@ export default {
     date() {
       const now = new Date();
       return `${now.getDate()}.${now.getMonth() + 1}.${now.getFullYear()}`;
-    },
-    hasPrevImage() {
-      return this.photos.length > 1 && this.selectedImageIndex > 0;
-    },
-    hasNextImage() {
-      return this.photos.length > 1 && this.selectedImageIndex < this.photos.length - 1;
     },
     constraints() {
       return {
@@ -261,39 +215,17 @@ export default {
     },
     selectImage(index) {
       this.showDetailView = true;
-      this.selectedImage = this.photos[index];
       this.selectedImageIndex = index;
     },
     closeDetailView() {
       this.showDetailView = false;
-      this.selectedImage = null;
-    },
-    share(imageData) {
-      navigator.share({
-        title: 'Foosballe Hall of Fame',
-        text: '',
-        url: imageData,
-      })
-      .then(() => console.log('Successful share'))
-      .catch((err) => {
-        this.error = err;
-        setTimeout(() => {
-          this.error = null;
-        }, 3000);
-      });
-    },
-    touchStart(evt) {
-      evt.currentTarget.classList.add('pressed');
-    },
-    touchEnd(evt) {
-      evt.currentTarget.classList.remove('pressed');
     },
   },
 };
 </script>
 
 <style lang="scss">
-  $primary-color: linear-gradient(to top, #ef4a8d, #ef5d97, #ef6da1, #ef7daa, #ee8bb3);
+  $primary-color: linear-gradient(to right top, #2ce795, #00cdc0, #00aedd, #008bdf, #1a62c0);
 
   ::-webkit-scrollbar { display: none; }
 
@@ -320,74 +252,15 @@ export default {
     flex-direction: column;
     overflow: hidden;
     transition: opacity .5s;
+    background-color: #bbfff9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg id='hexagons' fill='%23ffffff' fill-opacity='0.11' fill-rule='nonzero'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-color: rgba(0,0,0,.05);
 
     @media all and (orientation:landscape) {
       flex-direction: row;
     }
   }
-  .detail-view {
-    z-index: 10;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: $primary-color;
-    display: flex;
-    flex-direction: column;
 
-    @media all and (orientation:landscape) {
-      flex-direction: row;
-    }
-
-    &__image {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
-      flex: 1;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: white;
-      font-weight: 300;
-
-      @media all and (orientation:landscape) {
-        max-width: 85%;
-      }
-
-      a, span {
-        margin-top: 10px;
-        display: inline-block;
-        background: black;
-        border-radius: 25px;
-        padding: 10px 20px;
-        text-decoration: none;
-        color: #fff;
-      }
-    }
-    img {
-      width: 100%;
-      object-fit: contain;
-
-      @media all and (orientation:landscape) {
-        width: 85%;
-        height: 85%;
-      }
-    }
-
-    &__buttons {
-      display: flex;
-      padding: 15px;
-      align-items: center;
-      justify-content: space-around;
-
-      @media all and (orientation:landscape) {
-        flex-direction: column;
-      }
-    }
-  }
   main {
     flex: 1;
     margin: 20px;
@@ -400,17 +273,6 @@ export default {
       flex-direction: row;
     }
   }
-  .wire {
-    z-index: -1;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: rgba(white, .2);
-    mask: url('./assets/wire.svg') no-repeat 50% 50% / 400% 400%;
-  }
   .title {
     padding: 10px 10px 20px 10px;
     font-family: 'Exo 2', sans-serif;
@@ -422,38 +284,7 @@ export default {
      display: none;
     }
   }
-  .last-photo {
-    z-index: 2;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 
-    img {
-      z-index: 3;
-      position: relative;
-      width: 90%;
-      height: 90%;
-      object-fit: contain;
-    }
-
-    &:after {
-      z-index: 4;
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #fff;
-      animation: flash .7s forwards;
-    }
-
-  }
   .polaroid {
     position: relative;
     display: inline-block;
@@ -532,36 +363,6 @@ export default {
       flex-direction: column;
     }
   }
-  .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    width: 80px;
-    height: 80px;
-    color: white;
-    background: black;
-    border: 0;
-    border-radius: 50%;
-    outline: none;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
-    transition: transform .15s ease-out, opacity .4s;
-
-    &--sm {
-      width: 50px;
-      height: 50px;
-      font-size: 22px;
-    }
-
-    &.is-disabled {
-      opacity: .5;
-    }
-
-    &.pressed {
-      transform: scale(1.1);
-    }
-  }
   #paint {
     display: none;
     font-family: 'Exo 2', sans-serif;
@@ -572,85 +373,6 @@ export default {
     height: 1em;
     fill: currentColor;
     stroke: currentColor;
-  }
-  .strip {
-    width: 100%;
-    height: 100%;
-    padding: 10px;
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    overflow-x: scroll;
-    -webkit-overflow-scrolling: touch;
-
-    @media all and (orientation:landscape) {
-      height: 100%;
-      margin-left: 20px;
-      flex-direction: column;
-      overflow-y: scroll;
-      overflow-x: initial;
-      align-items: flex-start;
-    }
-  }
-  .strip a {
-    display: block;
-  }
-  .strip div:nth-child(2n+1) a {
-    transform: rotate(10deg)
-  }
-  .strip div:nth-child(2n+2) a {
-    transform: rotate(-10deg)
-  }
-  .strip img {
-    width: 100px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-
-    @media all and (orientation:landscape) {
-      width: 100%;
-    }
-  }
-
-  .error {
-    z-index: 20;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    margin: 10px;
-    padding: 15px;
-    color: white;
-    background: #FF596D;
-  }
-
-  @keyframes flash {
-    0% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
-  }
-
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity .25s;
-  }
-  .fade-enter,
-  .fade-leave-to {
-    opacity: 0;
-  }
-  .fade-scale-leave-active {
-    transition: transform .25s,  opacity .25s;
-  }
-  .fade-scale-leave-to {
-    opacity: 0;
-    transform: scale(3);
-  }
-  .slide-down-enter-active, .slide-down-leave-active {
-    transition: transform .25s;
-  }
-  .slide-down-enter, .slide-down-leave-to {
-    transform: translate(0, -100%);
   }
 
   .timer-enter-active, .timer-leave-active {
@@ -667,15 +389,5 @@ export default {
   .list-item {
     display: inline-block;
     margin-right: 10px;
-  }
-  .thumbnail-enter-active, .thumbnail-leave-active {
-    transition: all .3s;
-  }
-  .thumbnail-move {
-    transition: all .3s;
-  }
-  .thumbnail-enter, .thumbnail-leave-to {
-    opacity: 0;
-    transform: scale(.5);
   }
 </style>
