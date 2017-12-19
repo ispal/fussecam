@@ -46,6 +46,16 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+nav {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: opacity .5s;
 
+  @media all and (orientation:landscape) {
+    flex-direction: column;
+  }
+}
 </style>

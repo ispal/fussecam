@@ -18,9 +18,7 @@
               <img src="./assets/puff.svg" alt="Loading">
             </div>
           </transition>
-          <transition name="timer" mode="out-in">
-            <div :key="timerSeconds" v-if="showTimer" class="timer">{{ timerSeconds }}</div>
-          </transition>
+          <timer v-if="showTimer" :time-left="timerSeconds" @timerFinished="timerFinished" />
           <video playsinline ref="video"></video>
         </div>
         <div class="date">{{ date }}</div>
@@ -45,6 +43,7 @@ import LastPhoto from './LastPhoto';
 import AppMenu from './AppMenu';
 import Error from './Error';
 import ImageCapture from './ImageCapture';
+import Timer from './Timer';
 import { wait } from './Wait';
 
 export default {
@@ -55,6 +54,7 @@ export default {
     LastPhoto,
     AppMenu,
     Error,
+    Timer
   },
   data() {
     return {
@@ -107,23 +107,15 @@ export default {
       this.createLastPhoto(photo);
       this.photos.unshift(photo);
     },
-    async takePhotoWithTimer() {
+    takePhotoWithTimer() {
       if(this.showTimer) {
         return;
       }
       this.showTimer = true;
-      this.timerSeconds = 3;
-
-      await wait(1);
-      this.timerSeconds -= 1;
-      await wait(1);
-      this.timerSeconds -= 1;
-      await wait(1);
-      this.timerSeconds -= 1;
-
+    },
+    timerFinished() {
       this.showTimer = false;
       this.takePhoto();
-      this.timerSeconds = 3;
     },
     async createLastPhoto(data) {
       this.lastPhoto = data;
@@ -265,31 +257,6 @@ export default {
     }
 
   }
-
-  .timer {
-    z-index: 2;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 100px;
-    color: white;
-  }
-  nav {
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: opacity .5s;
-
-    @media all and (orientation:landscape) {
-      flex-direction: column;
-    }
-  }
   #paint {
     display: none;
     font-family: 'Exo 2', sans-serif;
@@ -300,21 +267,5 @@ export default {
     height: 1em;
     fill: currentColor;
     stroke: currentColor;
-  }
-
-  .timer-enter-active, .timer-leave-active {
-    transition: transform .2s ease, opacity .2s ease;
-  }
-  .timer-enter {
-    transform: scale(2);
-    opacity: 0;
-  }
-  .timer-leave-to {
-    transform: scale(.5);
-    opacity: 0;
-  }
-  .list-item {
-    display: inline-block;
-    margin-right: 10px;
   }
 </style>
