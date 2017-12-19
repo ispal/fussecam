@@ -76,7 +76,6 @@ export default {
         text: '',
         url: imageData,
       })
-      .then(() => console.log('Successful share'))
       .catch((err) => {
         this.error = err;
         setTimeout(() => {
