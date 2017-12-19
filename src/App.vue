@@ -77,8 +77,10 @@ export default {
     window.addEventListener('orientationchange', () => {
       this.stream.setPortrait(screen.orientation.angle === 0);
     });
+
     this.stream.startCamera()
     .then(() => {
+      this.videoReady = true;
     }).
     catch(err => {
       console.log(err)

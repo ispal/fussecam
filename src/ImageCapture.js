@@ -8,11 +8,12 @@ export default class ImageCapture {
   }
 
   constraints() {
-    return { video: { facingMode: this.isFront ? 'user' : 'environment', sidth: { ideal: 1920 }, height: { ideal: 1080 } } };
+    return { video: { facingMode: this.isFront ? 'user' : 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
   }
 
   async startCamera(isFront = true) {
     this.isFront = isFront;
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia(this.constraints());
       this.videoEl.srcObject = this.stream;
@@ -20,12 +21,8 @@ export default class ImageCapture {
         this.videoEl.play();
       };
     } catch (err) {
-      this.error = err;
-      setTimeout(() => {
-        this.error = null;
-      }, 3000);
+      throw Error(err);
     }
-
   }
 
   toggleCamera() {
