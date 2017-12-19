@@ -45,6 +45,7 @@ import LastPhoto from './LastPhoto';
 import AppMenu from './AppMenu';
 import Error from './Error';
 import ImageCapture from './ImageCapture';
+import { wait } from './Wait';
 
 export default {
   name: 'app',
@@ -83,7 +84,10 @@ export default {
       this.videoReady = true;
     }).
     catch(err => {
-      console.log(err)
+      this.error = err;
+      setTimeout(() => {
+        this.error = null;
+      }, 3000);
     });
   },
   computed: {
@@ -94,44 +98,40 @@ export default {
   },
   methods: {
     takePhoto() {
+      if(this.showTimer) {
+        return;
+      }
       const photo = this.stream.takePhoto();
       this.lastPhoto = null;
-
-      if (this.timer) {
-        clearTimeout(this.timer);
-      }
 
       this.createLastPhoto(photo);
       this.photos.unshift(photo);
     },
-    takePhotoWithTimer() {
-      this.showTimer = true;
-
-      if (this.timer) {
-        clearInterval(this.timer);
-        this.timerSeconds = 3;
+    async takePhotoWithTimer() {
+      if(this.showTimer) {
+        return;
       }
-      this.timer = setInterval(() => {
-        this.timerSeconds -= 1;
-        if (this.timerSeconds === 0) {
-          this.showTimer = false;
-          clearInterval(this.timer);
-          this.timerSeconds = 3;
-          setTimeout(() => {
-            this.takePhoto();
-          }, 1000);
-        }
-      }, 1000);
+      this.showTimer = true;
+      this.timerSeconds = 3;
+
+      await wait(1);
+      this.timerSeconds -= 1;
+      await wait(1);
+      this.timerSeconds -= 1;
+      await wait(1);
+      this.timerSeconds -= 1;
+
+      this.showTimer = false;
+      this.takePhoto();
+      this.timerSeconds = 3;
     },
-    createLastPhoto(data) {
+    async createLastPhoto(data) {
       this.lastPhoto = data;
       this.showLastPhoto = true;
-      this.timer = setTimeout(() => {
-        this.showLastPhoto = false;
-      }, 3000);
-      this.timer = setTimeout(() => {
-        this.lastPhoto = null;
-      }, 3500);
+      await wait(3);
+      this.showLastPhoto = false;
+      await wait(.5);
+      this.lastPhoto = null;
     },
     clear() {
       this.photos = [];
